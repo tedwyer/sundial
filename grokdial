@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seiko Sunny Men • Interactive Equatorial Sundial Demo</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&amp;family=Space+Grotesk:wght@500&amp;display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0f172a;
+            color: #e2e8f0;
+            font-family: 'Inter', system_ui, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        header {
+            background: linear-gradient(90deg, #1e2937, #334155);
+            width: 100%;
+            padding: 1.5rem 2rem;
+            text-align: center;
+            border-bottom: 3px solid #f59e0b;
+        }
+        
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2.2rem;
+            margin: 0;
+            letter-spacing: -2px;
+            color: #f59e0b;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin: 0.5rem 0 0;
+        }
+        
+        .container {
+            max-width: 1100px;
+            width: 100%;
+            display: flex;
+            gap: 2rem;
+            padding: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .canvas-container {
+            flex: 1;
+            min-width: 520px;
+            background: #1e2937;
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.4);
+        }
+        
+        canvas {
+            width: 100%;
+            max-height: 520px;
+            border-radius: 16px;
+            background: #0f172a;
+            box-shadow: inset 0 4px 12px rgba(0,0,0,0.6);
+        }
+        
+        .controls {
+            flex: 1;
+            min-width: 340px;
+            background: #1e2937;
+            border-radius: 20px;
+            padding: 1.8rem;
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.4);
+            display: flex;
+            flex-direction: column;
+            gap: 1.4rem;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+        
+        label {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #cbd5e1;
+        }
+        
+        input[type="range"] {
+            accent-color: #f59e0b;
+        }
+        
+        .value {
+            font-family: monospace;
+            background: #334155;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            width: fit-content;
+        }
+        
+        button {
+            background: #f59e0b;
+            color: #0f172a;
+            border: none;
+            padding: 14px 24px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgb(245 158 11);
+        }
+        
+        .info-panel {
+            background: #334155;
+            border-radius: 16px;
+            padding: 1.2rem;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        footer {
+            margin-top: auto;
+            padding: 1.5rem;
+            font-size: 0.9rem;
+            opacity: 0.7;
+            text-align: center;
+        }
+        
+        .seiko {
+            font-size: 0.8rem;
+            background: #f59e0b;
+            color: #0f172a;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="seiko">SEIKO SUNNY MEN</div>
+        <h1>Interactive Equatorial Sundial</h1>
+        <p class="subtitle">Watch the Sun cast time — just like the 2024 Seiko Power Design Project prototype</p>
+    </header>
+
+    <div class="container">
+        <!-- Canvas -->
+        <div class="canvas-container">
+            <canvas id="sundial" width="600" height="520"></canvas>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="control-group">
+                <label>Apparent Solar Time (what the sundial reads)</label>
+                <input type="range" id="timeSlider" min="0" max="23.99" step="0.01" value="12">
+                <div style="display:flex; justify-content:space-between; font-size:0.85rem;">
+                    <span>00:00</span>
+                    <span id="timeValue">12:00</span>
+                    <span>23:59</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Day of the Year <span id="dayValue" class="value">172</span> (June 21 – Summer Solstice)</label>
+                <input type="range" id="daySlider" min="1" max="365" value="172">
+            </div>
+
+            <div class="control-group">
+                <label>Latitude <span id="latValue" class="value">40° N</span></label>
+                <input type="range" id="latSlider" min="0" max="70" value="40">
+                <small>The gnomon must point toward the celestial pole (your latitude angle)</small>
+            </div>
+
+            <div style="display:flex; gap:1rem;">
+                <button id="playBtn">▶ Play Real-Time Animation</button>
+                <button id="resetBtn">Reset to Noon</button>
+            </div>
+
+            <div class="info-panel">
+                <strong>Current Readings</strong><br>
+                <div style="margin: 12px 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-family: monospace;">
+                    <div>Apparent Solar Time: <span id="apparentDisplay" style="color:#f59e0b">12:00</span></div>
+                    <div>Mean Solar Time: <span id="meanDisplay">12:00</span></div>
+                    <div>Equation of Time: <span id="eotDisplay" style="color:#64748b">+0 min</span></div>
+                    <div>Sun Declination: <span id="declDisplay">+23.4°</span></div>
+                </div>
+                <div id="explanation" style="font-size:0.9rem; line-height:1.4;">
+                    The gnomon (central rod) is parallel to Earth’s axis. As Earth rotates 15° per hour, the shadow sweeps uniformly across the equally-spaced hour lines.
+                </div>
+            </div>
+
+            <div class="legend">
+                <div class="legend-item"><span class="dot" style="background:#f59e0b"></span> Gnomon (aligned to pole)</div>
+                <div class="legend-item"><span class="dot" style="background:#e2e8f0"></span> Shadow (apparent solar time)</div>
+                <div class="legend-item"><span class="dot" style="background:#64748b; opacity:0.6"></span> Dial (equatorial plane)</div>
+            </div>
+
+            <small style="opacity:0.6; text-align:center;">
+                Inspired by the Seiko Sunny Men prototype • Uses real astronomical formulas<br>
+                Drag sliders • Watch the shadow move • Apply Equation of Time to get civil time
+            </small>
+        </div>
+    </div>
+
+    <footer>
+        Built live for you • How a sundial turns sunlight + Earth’s rotation into time • 
+        <a href="#" onclick="window.location.reload()" style="color:#f59e0b; text-decoration:underline;">Reset demo</a>
+    </footer>
+
+    <script>
+        const canvas = document.getElementById('sundial');
+        const ctx = canvas.getContext('2d');
+        
+        let time = 12;           // hours (apparent solar)
+        let dayOfYear = 172;     // June 21
+        let latitude = 40;       // degrees North
+        
+        let isPlaying = false;
+        let animationFrame;
+        let lastTime = Date.now();
+        
+        // Approximate Equation of Time (minutes)
+        function calculateEOT(d) {
+            const B = (360 / 365) * (d - 81) * Math.PI / 180;
+            return 9.87 * Math.sin(2 * B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B);
+        }
+        
+        // Approximate solar declination (°)
+        function calculateDeclination(d) {
+            return 23.45 * Math.sin(2 * Math.PI * (d - 81) / 365);
+        }
+        
+        function drawSundial() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const radius = 220;
+            
+            // Dial background (equatorial plane)
+            ctx.save();
+            ctx.shadowColor = 'rgba(245, 158, 11, 0.3)';
+            ctx.shadowBlur = 30;
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius + 20, 0, Math.PI * 2);
+            ctx.fillStyle = '#1e2937';
+            ctx.fill();
+            ctx.restore();
+            
+            // Main dial circle
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#334155';
+            ctx.fill();
+            ctx.lineWidth = 18;
+            ctx.strokeStyle = '#f59e0b';
+            ctx.stroke();
+            
+            // Inner ring
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius - 40, 0, Math.PI * 2);
+            ctx.lineWidth = 8;
+            ctx.strokeStyle = '#64748b';
+            ctx.stroke();
+            
+            // Hour lines & numbers (24-hour equatorial style – 15° spacing)
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#e2e8f0';
+            ctx.font = 'bold 18px monospace';
+            
+            for (let h = 0; h < 24; h++) {
+                const angleDeg = h * 15 - 90; // 0° at top = 6:00 for visual clarity
+                const angle = angleDeg * Math.PI / 180;
+                const x1 = cx + (radius - 55) * Math.cos(angle);
+                const y1 = cy + (radius - 55) * Math.sin(angle);
+                const x2 = cx + (radius - 10) * Math.cos(angle);
+                const y2 = cy + (radius - 10) * Math.sin(angle);
+                
+                // Hour line
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#e2e8f0';
+                ctx.stroke();
+                
+                // Number (Roman numerals for classic sundial feel)
+                const numRadius = radius - 78;
+                const numX = cx + numRadius * Math.cos(angle);
+                const numY = cy + numRadius * Math.sin(angle);
+                let label = h === 0 ? 'XII' : h === 12 ? 'XII' : (h < 12 ? h : h - 12);
+                if (h === 0 || h === 12) label = 'XII';
+                else if (h === 6) label = 'VI';
+                else if (h === 18) label = 'VI';
+                ctx.save();
+                ctx.translate(numX, numY);
+                ctx.rotate(angle + Math.PI / 2);
+                ctx.fillText(label.toString(), 0, 0);
+                ctx.restore();
+            }
+            
+            // North indicator (for alignment)
+            ctx.save();
+            ctx.fillStyle = '#f59e0b';
+            ctx.font = 'bold 14px Inter';
+            ctx.fillText('N', cx - 8, cy - radius - 35);
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - radius - 22);
+            ctx.lineTo(cx - 12, cy - radius - 8);
+            ctx.lineTo(cx + 12, cy - radius - 8);
+            ctx.fill();
+            ctx.restore();
+            
+            // Gnomon (central rod – always perpendicular to dial in equatorial design)
+            ctx.save();
+            ctx.shadowColor = '#f59e0b';
+            ctx.shadowBlur = 15;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 18, 0, Math.PI * 2);
+            ctx.fillStyle = '#0f172a';
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(cx - 4, cy - 8);
+            ctx.lineTo(cx - 4, cy + 8);
+            ctx.lineTo(cx + 4, cy + 8);
+            ctx.lineTo(cx + 4, cy - 8);
+            ctx.fillStyle = '#f59e0b';
+            ctx.fill();
+            ctx.restore();
+            
+            // Shadow (the magic!)
+            const hourAngle = (time - 12) * 15; // 15° per hour
+            const shadowAngle = (hourAngle - 90) * Math.PI / 180; // offset for canvas
+            
+            const shadowLength = radius - 25;
+            const shadowX = cx + shadowLength * Math.cos(shadowAngle);
+            const shadowY = cy + shadowLength * Math.sin(shadowAngle);
+            
+            // Shadow line
+            ctx.shadowColor = 'rgba(226, 232, 240, 0.9)';
+            ctx.shadowBlur = 12;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(shadowX, shadowY);
+            ctx.lineWidth = 9;
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.stroke();
+            
+            // Shadow tip arrow
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#e2e8f0';
+            ctx.beginPath();
+            ctx.moveTo(shadowX, shadowY);
+            ctx.lineTo(shadowX - 12 * Math.cos(shadowAngle + 2.4), shadowY - 12 * Math.sin(shadowAngle + 2.4));
+            ctx.lineTo(shadowX - 12 * Math.cos(shadowAngle - 2.4), shadowY - 12 * Math.sin(shadowAngle - 2.4));
+            ctx.fill();
+            
+            // Tiny Seiko logo on dial
+            ctx.save();
+            ctx.font = '900 13px Space Grotesk';
+            ctx.fillStyle = '#f59e0b';
+            ctx.fillText('SEIKO', cx - 26, cy + 8);
+            ctx.restore();
+        }
+        
+        function updateDisplays() {
+            // Update sliders
+            document.getElementById('timeValue').textContent = 
+                `${Math.floor(time).toString().padStart(2, '0')}:${Math.floor((time % 1) * 60).toString().padStart(2, '0')}`;
+            
+            document.getElementById('dayValue').textContent = Math.round(dayOfYear);
+            document.getElementById('latValue').textContent = `${latitude}° N`;
+            
+            // Astronomical values
+            const eot = calculateEOT(dayOfYear);
+            const decl = calculateDeclination(dayOfYear);
+            
+            const apparentHours = time;
+            const meanHours = apparentHours - (eot / 60); // EoT in minutes → hours
+            
+            // Format time strings
+            const formatTime = (hrs) => {
+                let h = Math.floor(hrs + 24) % 24;
+                let m = Math.round((hrs % 1) * 60);
+                return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+            };
+            
+            document.getElementById('apparentDisplay').textContent = formatTime(apparentHours);
+            document.getElementById('meanDisplay').textContent = formatTime(meanHours);
+            document.getElementById('eotDisplay').textContent = `${eot > 0 ? '+' : ''}${eot.toFixed(0)} min`;
+            document.getElementById('declDisplay').textContent = `${decl > 0 ? '+' : ''}${decl.toFixed(1)}°`;
+            
+            // Dynamic explanation
+            const expl = document.getElementById('explanation');
+            if (Math.abs(eot) > 8) {
+                expl.innerHTML = `The Sun is running <strong>${eot > 0 ? 'fast' : 'slow'}</strong> today.<br>The Seiko Sunny Men requires an Equation of Time correction of <strong>${eot.toFixed(0)} minutes</strong> for perfect civil time.`;
+            } else {
+                expl.textContent = 'The gnomon is parallel to Earth’s axis. Earth rotates 15° per hour → the shadow moves uniformly around the dial.';
+            }
+            
+            drawSundial();
+        }
+        
+        function animateLoop() {
+            if (!isPlaying) return;
+            
+            const now = Date.now();
+            const delta = (now - lastTime) / 1000 / 4; // speed control (4× real time)
+            lastTime = now;
+            
+            time = (time + delta * 0.5) % 24; // advance ~30 minutes per real second
+            if (time < 0) time += 24;
+            
+            updateDisplays();
+            animationFrame = requestAnimationFrame(animateLoop);
+        }
+        
+        // Event listeners
+        function initListeners() {
+            document.getElementById('timeSlider').addEventListener('input', function() {
+                time = parseFloat(this.value);
+                updateDisplays();
+            });
+            
+            document.getElementById('daySlider').addEventListener('input', function() {
+                dayOfYear = parseFloat(this.value);
+                updateDisplays();
+            });
+            
+            document.getElementById('latSlider').addEventListener('input', function() {
+                latitude = parseFloat(this.value);
+                updateDisplays();
+            });
+            
+            const playBtn = document.getElementById('playBtn');
+            playBtn.addEventListener('click', function() {
+                isPlaying = !isPlaying;
+                playBtn.textContent = isPlaying ? '⏸ Pause' : '▶ Play Real-Time Animation';
+                if (isPlaying) {
+                    lastTime = Date.now();
+                    animateLoop();
+                } else {
+                    cancelAnimationFrame(animationFrame);
+                }
+            });
+            
+            document.getElementById('resetBtn').addEventListener('click', function() {
+                time = 12;
+                isPlaying = false;
+                document.getElementById('playBtn').textContent = '▶ Play Real-Time Animation';
+                cancelAnimationFrame(animationFrame);
+                updateDisplays();
+            });
+            
+            // Keyboard support
+            window.addEventListener('keydown', function(e) {
+                if (e.key === 'r' || e.key === 'R') {
+                    document.getElementById('resetBtn').click();
+                }
+            });
+        }
+        
+        // Start everything
+        window.onload = function() {
+            initListeners();
+            updateDisplays();
+            drawSundial();
+            
+            // Easter egg: click the canvas to instantly jump 6 hours
+            canvas.addEventListener('click', function() {
+                time = (time + 6) % 24;
+                updateDisplays();
+            });
+            
+            console.log('%c✅ Interactive Seiko Sunny Men equatorial sundial animation ready!', 'color:#f59e0b; font-family:monospace');
+        };
+    </script>
+</body>
+</html>
